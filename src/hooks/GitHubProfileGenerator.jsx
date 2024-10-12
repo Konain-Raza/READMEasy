@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import ProfileForm from "../components/ProfileForm";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function GitHubProfileGenerator() {
   const [profileInfo, setProfileInfo] = useState({
@@ -28,7 +30,24 @@ function GitHubProfileGenerator() {
     setProfileInfo({ ...profileInfo, [e.target.name]: e.target.value });
   };
 
+  // Validation function
+  const validateFields = () => {
+    for (const key in profileInfo) {
+      if (!profileInfo[key]) {
+        toast.error(
+          `Please fill in the ${key.replace(/([A-Z])/g, " $1").toLowerCase()}.`
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
   const generateProfile = async () => {
+    if (!validateFields()) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -38,6 +57,9 @@ function GitHubProfileGenerator() {
     if (!API_KEY) {
       setError("API key is missing. Please check your environment variables.");
       setIsLoading(false);
+      toast.error(
+        "API key is missing. Please check your environment variables."
+      );
       return;
     }
 
@@ -127,9 +149,11 @@ ${
       const result = await model.generateContent(prompt);
       const response = await result.response;
       setGeneratedProfile(response.text());
+      toast.success("Profile README generated successfully!");
     } catch (error) {
       setError("Error generating profile README: " + error.message);
       console.error("Error generating profile README:", error);
+      toast.error("Error generating profile README: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -138,12 +162,14 @@ ${
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedProfile).then(() => {
       setCopied(true);
+      toast.success("Profile README copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
+    <div className="bg-white dark:bg-gray-950 rounded-lg shadow-lg p-8 mb-8">
+      <ToastContainer />
       <h2 className="text-2xl font-bold text-purple-400 mb-7 inline-block relative overflow-hidden group">
         GitHub Profile README Generator
         <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-400 to-pink-500 transform origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
@@ -184,13 +210,15 @@ ${
           </h3>
           <button
             onClick={copyToClipboard}
-            className="absolute top-0 right-0 bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-300"
+            className="absolute top-0 right-0 bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 transition duration-300"
           >
             {copied ? "Copied!" : "Copy"}
           </button>
-          <pre className="bg-gray-700 p-4 rounded-lg text-white whitespace-pre-wrap">
-            {generatedProfile}
-          </pre>
+          <textarea
+            readOnly
+            value={generatedProfile}
+            className="w-full h-64 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+          />
         </div>
       )}
     </div>
