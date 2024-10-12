@@ -1,70 +1,98 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function InputForm({ onSubmit }) {
   const [projectInfo, setProjectInfo] = useState({
-    projectName: '',
-    description: '',
-    features: '',
-    installation: '',
-    usage: '',
-    contributing: '',
-    license: '',
+    projectname: "",
+    description: "",
+    features: "",
+    installation: "",
+    usage: "",
+    contributing: "",
+    license: "",
   });
 
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const handleChange = (e) => {
-    setProjectInfo({ ...projectInfo, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setProjectInfo((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const requiredFields = ["projectname", "description"];
+    const emptyFields = requiredFields.filter((field) => !projectInfo[field]);
+
+    if (emptyFields.length > 0) {
+      emptyFields.forEach((field) => {
+        toast.error(`${field.replace(/([A-Z])/g, " ")} is required`);
+      });
+      return;
+    }
+
+    setIsProcessing(true);
     onSubmit(projectInfo);
+    toast.success("README generated successfully!");
+    e.target.reset();
+    setIsProcessing(false);
+  };
+
+  const placeholders = {
+    projectname: "What’s the name of your project?",
+    description: "Describe your project briefly",
+    features: "List the key features of your project",
+    installation: "How can users install your project?",
+    usage: "How do users use your project?",
+    contributing: "How can others contribute to your project?",
+    license: "Specify the license for your project",
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {Object.entries(projectInfo).map(([key, value]) => (
-        <div key={key}>
-         {
-          key=='projectName' || key=='description' ?(
-            <label htmlFor={key} className="block text-sm font-medium text-purple-300 mb-1 capitalize">
-            {key.replace(/([A-Z])/g, ' $1').trim()}
-          </label>
-          ):(
-            <label htmlFor={key} className="block text-sm font-medium text-purple-300 mb-1 capitalize">
-            {key.replace(/([A-Z])/g, ' $1').trim()} (Optional)
-          </label>
-          )
-         }
-          {key === 'description' || key === 'features' || key === 'installation' || key === 'usage' || key === 'contributing' ? (
-            <textarea
-              id={key}
-              name={key}
-              value={value}
-              onChange={handleChange}
-              placeholder={`Enter ${key}`}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400"
-              rows="4"
-            />
-          ) : (
-            <input
-              type="text"
-              id={key}
-              name={key}
-              value={value}
-              onChange={handleChange}
-              placeholder={`Enter ${key}`}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400"
-            />
-          )}
-        </div>
-      ))}
-      <button
-        type="submit"
-        className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition duration-300"
-      >
-        Generate README
-      </button>
-    </form>
+    <div>
+      <ToastContainer />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {Object.entries(projectInfo).map(([key, value]) => (
+          <div key={key}>
+            <label
+              htmlFor={key}
+              className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-1 capitalize"
+            >
+              {key.replace(/([A-Z])/g, " ")}{["features", "installation", "usage", "contributing", "license"].includes(key) ? " (Optional)" : "" }
+            </label>
+            {["description", "features", "installation", "usage", "contributing"].includes(key) ? (
+              <textarea
+                id={key}
+                name={key}
+                value={value}
+                onChange={handleChange}
+                placeholder={placeholders[key]}
+                className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                rows="4"
+              />
+            ) : (
+              <input
+                type="text"
+                id={key}
+                name={key}
+                value={value}
+                onChange={handleChange}
+                placeholder={placeholders[key]}
+                className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              />
+            )}
+          </div>
+        ))}
+        <button
+          type="submit"
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition duration-300"
+        >
+          {isProcessing ? "Processing..." : "Generate README"}
+        </button>
+      </form>
+    </div>
   );
 }
 
